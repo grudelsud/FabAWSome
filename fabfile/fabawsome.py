@@ -1,51 +1,17 @@
-''' 
---------------------------------------------------------------------------------------
-django_fabric_aws.py
---------------------------------------------------------------------------------------
-A set of fabric commands to manage a Django deployment on AWS
-
-author : Ashok Fernandez (github.com/ashokfernandez/)
-credit : Derived from files in https://github.com/gcollazo/Fabulous
-date   : 11 / 3 / 2014
-
-Commands include:
-    - fab spawn instance  
-        - Spawns a new EC2 instance (as definied in project_conf.py) and return's it's public dns
-          This takes around 8 minutes to complete.
- 
-    - fab update_packages
-        - Updates the python packages on the server to match those found in requirements/common.txt and 
-          requirements/prod.txt
- 
-    - fab deploy
-        - Pulls the latest commit from the master branch on the server, collects the static files, syncs the db and                   
-          restarts the server
- 
-    - fab reload_gunicorn
-        - Pushes the gunicorn startup script to the servers and restarts the gunicorn process, use this if you 
-          have made changes to templates/start_gunicorn.bash
- 
-    - fab reload_nginx
-        - Pushes the nginx config files to the servers and restarts the nginx, use this if you 
-          have made changes to templates/nginx-app-proxy or templates/nginx.conf
-
-    - fab reload_supervisor
-        - Pushes the supervisor config files to the servers and restarts the supervisor, use this if you 
-          have made changes to templates/supervisord-init or templates/supervisord.conf
-    
-    - fab manage:command="management command"
-        - Runs a python manage.py command on the server. To run this command we need to specify an argument, eg for syncdb
-          type the command -> fab manage:command="syncdb --no-input"
-
-'''
-
+"""
+author : Thomas Alisi (github.com/grudelsud)
+credit : Derived from files in https://github.com/ashokfernandez/Django-Fabric-AWS
+"""
 from fabric.api import *
 from fabric.colors import green as _green, yellow as _yellow
-from project_conf import *
-import tasks
+
 import boto
 import boto.ec2
 import time
+
+from conf import *
+from tasks import *
+
 
 # AWS user credentials
 env.user = fabconf['SERVER_USERNAME']
@@ -76,12 +42,7 @@ def instance():
     time.sleep(30)
     
     # Configure the instance that was just created
-    for item in tasks.configure_instance:
-        try:
-            print(_yellow(item['message']))
-        except KeyError:
-            pass
-        globals()["_" + item['action']](item['params'])
+    configure()
     
     # Print out the final runtime and the public dns of the new instance
     end_time = time.time()
@@ -92,12 +53,25 @@ def instance():
     print(_yellow("fabconf['EC2_INSTANCES'] : ")),
     print(_green(env.host_string))
 
+def configure():
+    """
+    Re-run configuration task on an instance
+    """
+    print(_green("Running configuration tasks on %s" % env.host_string))
+    for item in tasks.configure_instance:
+        try:
+            print(_yellow(item['message']))
+        except KeyError:
+            pass
+        globals()["_" + item['action']](item['params'])
+    print(_green('All done'))
+
 def deploy():
     """
-    Pulls the latest commit from bitbucket, resyncs the database, collects the static files and restarts the
+    Pulls the latest commit from github, resyncs the database, collects the static files and restarts the
     server.
     """
-    _run_task(tasks.deploy, "Updating server to latest commit in the bitbucket repo...", "Finished updating the server")
+    _run_task(tasks.deploy, "Updating server to latest commit in the github repo...", "Finished updating the server")
 
 def update_packages():
     """
@@ -133,7 +107,7 @@ def manage(command):
     env.hosts = fabconf['EC2_INSTANCES']
 
     # Run the management command insite the virtualenv
-    _virtualenv("python %(PROJECT_PATH)s/manage.py " + command)
+    _virtualenv("python %(DJANGO_PROJECT_PATH)s/manage.py " + command)
 
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -174,18 +148,21 @@ def _create_ec2_instance():
     Creates EC2 Instance
     """
     print(_yellow("Creating instance"))
-    conn = boto.ec2.connect_to_region(ec2_region, aws_access_key_id=fabconf['AWS_ACCESS_KEY'], aws_secret_access_key=fabconf['AWS_SECRET_KEY'])
+    aws_key = {
+        'aws_access_key_id': fabconf['AWS_ACCESS_KEY'], 
+        'aws_secret_access_key': fabconf['AWS_SECRET_KEY']
+    }
+    conn = boto.ec2.connect_to_region(ec2_region, **aws_key)
 
     image = conn.get_all_images(ec2_amis)
 
-    reservation = image[0].run(1, 1, ec2_keypair, ec2_secgroups,
-        instance_type=ec2_instancetype)
+    reservation = image[0].run(1, 1, ec2_keypair, ec2_secgroups, instance_type=ec2_instancetype)
 
     instance = reservation.instances[0]
     conn.create_tags([instance.id], {"Name":fabconf['INSTANCE_NAME_TAG']})
     
     while instance.state == u'pending':
-        print(_yellow("Instance state: %s" % instance.state))
+        print(_yellow("Instance state: %s. Will check again in 10 seconds" % instance.state))
         time.sleep(10)
         instance.update()
 
@@ -194,78 +171,3 @@ def _create_ec2_instance():
     
     return instance.public_dns_name
 
-def _virtualenv(params):
-    """
-    Allows running commands on the server
-    with an active virtualenv
-    """
-    with cd(fabconf['APPS_DIR']):
-        _virtualenv_command(_render(params))
-
-def _apt(params):
-    """
-    Runs apt-get install commands
-    """
-    for pkg in params:
-        _sudo("apt-get install -qq %s" % pkg)
-
-def _pip(params):
-    """
-    Runs pip install commands
-    """
-    for pkg in params:
-        _sudo("pip install %s" % pkg)
-
-def _run(params):
-    """
-    Runs command with active user
-    """
-    command = _render(params)
-    run(command)
-
-def _sudo(params):
-    """
-    Run command as root
-    """
-    command = _render(params)
-    sudo(command)
-
-def _put(params):
-    """
-    Moves a file from local computer to server
-    """
-    put(_render(params['file']), _render(params['destination']))
-
-def _put_template(params):
-    """
-    Same as _put() but it loads a file and does variable replacement
-    """
-    f = open(_render(params['template']), 'r')
-    template = f.read()
-
-    run(_write_to(_render(template), _render(params['destination'])))
-
-def _render(template, context=fabconf):
-    """
-    Does variable replacement
-    """
-    return template % context
-
-def _write_to(string, path):
-    """
-    Writes a string to a file on the server
-    """
-    return "echo '" + string + "' > " + path
-
-def _append_to(string, path):
-    """
-    Appends to a file on the server
-    """
-    return "echo '" + string + "' >> " + path
-
-def _virtualenv_command(command):
-    """
-    Activates virtualenv and runs command
-    """
-    with cd(fabconf['APPS_DIR']):
-        sudo(fabconf['ACTIVATE'] + ' && ' + command, user=fabconf['SERVER_USERNAME'])

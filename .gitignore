@@ -1,3 +1,10 @@
 .DS_Store
 *.pyc
 hosts.json
+
+secrets/*
+!secrets/.gitinclude
+
+projects/*
+!projects/sample.json
+

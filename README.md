@@ -1,73 +1,99 @@
-# Django Fabric AWS
-### A Fabric script to manage a Django deployment on Amazon AWS
+# FabAWSome
 
-This fabfile along with the provided templates can spawn EC2 instances, install and configure a stateless Django stack on them (nginx + gunicorn with Amazon S3 for staticfiles). 
+A bunch of Fabric scripts to manage web stuff on AWS
 
-Furthermore it can update your instances from a git repo stored on bitbucket [private repos are free on bitbucket so you can run private stuff on your server]
+This fabfile along with the provided templates can spawn EC2 instances, aims at giving a quick and easy way to install, configure and run a variety of services, suchs as a full Django stack (nginx + gunicorn with Amazon S3 for staticfiles) or Varnish caching server.
 
 ## Author
-[Ashok Fernandez](https://github.com/ashokfernandez/)
+
+[Thomas M. Alisi](https://github.com/grudelsud/)
 
 ## Acknowledgements
-This was based on [Fabulous](https://github.com/gcollazo/Fabulous) by [Giovanni Collazo](https://github.com/gcollazo).
 
+This is based on [Django-Fabric-AWS](https://github.com/ashokfernandez/Django-Fabric-AWS) by [Ashok Fernandez](https://github.com/ashokfernandez/), and his work being inspired [Fabulous](https://github.com/gcollazo/Fabulous) by [Giovanni Collazo](https://github.com/gcollazo).
 
 ## Installation
- * Download this repo and drag the **fabfile** folder into the root directory of your Django project. 
+ * create and activate a **virtual environment**
  * cd into the folder and run `pip install -r requirements.txt`
 
-## Setting up Your Django Project
-See an [example here](https://github.com/ashokfernandez/Django-Fabric-AWS---amazon_app) of how to setup your Django project using the following instructions.
+## Configuration
 
- * Create a folder in the root directory of your Django project called **requirements** that has three pip requirements files in it:
-    * **common.txt** for all your common python dependancies between the server and local (add Django to this)
-    * **dev.txt** for your local python dependancies
-    * **prod.txt** for your server python dependancies (add boto, django-storages and psycopg2 to this)
+### Existing instances
 
-* Create a folder where the settings.py of your Django project is located called **settings** that has four Python files in it
-    * **__init__.py**
-    * **common.py** for all your common Django settings
-    * **dev.py** for your local Django settings
-    * **prod.py** for your server Django settings
-* At the top of both **dev.py** and **prod.py** add the line `from <django_project_name>.settings.common import *`
-* Change the `os.environ.setdefault("DJANGO_SETTINGS_MODULE", "<django_project_name>.settings")` in both wsgi.py and manage.py to `os.environ.setdefault("DJANGO_SETTINGS_MODULE", "<django_project_name>.settings.prod")`. This means that the project with default to the production settings, however you can run it locally using `python manage.py runserver --settings=<django_project_name>.settings.dev`
-* [Setup a set of SSH keys](https://confluence.atlassian.com/display/BITBUCKET/Set+up+SSH+for+Git) for the bitbucket account where your repo is hosted
-* Provision an S3 bucket for the staticfiles and add the following to **settings/prod.py**
-    
-        INSTALLED_APPS += ('storages',)
-        AWS_STORAGE_BUCKET_NAME = "<s3_staticfiles_bucket_name>"
-        STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
-        S3_URL = 'http://%s.s3.amazonaws.com/' % AWS_STORAGE_BUCKET_NAME
-        STATIC_URL = S3_URL
+defined in to project.json, used to add the public dns of your instances grouped by families after you have spawned them
 
-* Fill out the details in **fabfile/project_conf.py**
+`fabconf['EC2_INSTANCES'] = {'family': ['']}`
 
-## Commands
-After all that work you can now run these commands which will execute across all your EC2 instances
+### Project name 
 
-- `fab spawn instance` 
-    - Spawns a new EC2 instance (as definied in project_conf.py) and return's it's public dns. This takes around 8 minutes to complete.
+defined in project.json
 
-- `fab update_packages`
-    - Updates the python packages on the server to match those found in requirements/common.txt and 
-      requirements/prod.txt
+`fabconf['PROJECT_NAME'] = ""`
 
-- `fab deploy`
-    - Pulls the latest commit from the master branch on the server, collects the static files, syncs the db and                   
-      restarts the server
+### EC2 Key
 
-- `fab reload_gunicorn`
-    - Pushes the gunicorn startup script to the servers and restarts the gunicorn process, use this if you 
-      have made changes to templates/start_gunicorn.bash
+defined in project.json, name of the private key file you use to connect to EC2 instances (located in the secrets folder) 
 
-- `fab reload_nginx`
-    - Pushes the nginx config files to the servers and restarts the nginx, use this if you 
-      have made changes to templates/nginx-app-proxy or templates/nginx.conf
+`fabconf['EC2_KEY_NAME'] = ''`
 
-- `fab reload_supervisor`
-    - Pushes the supervisor config files to the servers and restarts the supervisor, use this if you 
-      have made changes to templates/supervisord-init or templates/supervisord.conf
+### Email for the server admin 
 
-- `fab manage:command="management command"`
-    - Runs a python manage.py command on the server. To run this command we need to specify an argument, eg for syncdb
-      type the command -> fab manage:command="syncdb --no-input"
+defined in project.json
+
+`fabconf['ADMIN_EMAIL'] = "webmaster@yourdomain.com"`
+
+### Git username for the server 
+
+defined in project.json
+
+`fabconf['GIT_USERNAME'] = ""`
+
+### Github deploy key
+
+defined in project.json, name of the private key file used for github deployments 
+
+`fabconf['GITHUB_DEPLOY_KEY_NAME'] = ""`
+
+### Github user/repo 
+
+defined in project.json, used to derive full path to the repo of the application you want to install 
+
+  fabconf['GITHUB_USERNAME'] = 'Stinkdigital'
+  fabconf['GITHUB_REPO_NAME'] = 'Warp-Records'
+
+### EC2 key
+
+defined in project.json, [check this out](http://bit.ly/j5ImEZ)
+
+`fabconf['AWS_ACCESS_KEY'] = ''`
+
+### EC2 secret
+
+defined in project.json, [check this out](http://bit.ly/j5ImEZ)
+
+`fabconf['AWS_SECRET_KEY'] = ''`
+
+### App domains 
+
+defined in project.json, what domains NGINX should listen for
+
+`fabconf['DOMAINS'] = ""`
+
+### Django Specific
+
+defined in project.json, Django project name
+
+`fabconf['DJANGO_PROJECT_NAME'] = ''`
+
+defined in project.json, where to find manage.py relative to `PROJECT_ROOT` (automatically detected)
+
+# fabconf['DJANGO_PROJECT_PATH'] = 'www/%s' % (fabconf['DJANGO_PROJECT_NAME'],)
+ 
+defined in project.json, Django settings file
+
+`fabconf['DJANGO_SETTINGS_MODULE'] = "%s.settings.bla" % (fabconf['DJANGO_PROJECT_NAME'],)`
+
+## TODO
+
+- make the plugin structure really pluggable, at the moment it's all entangled with cross-plugin dependencies
+- support docker containers as plugin

@@ -1,0 +1,26 @@
+{
+	"PROJECT_NAME": "Test",
+	"DOMAINS": "_",
+	"PROJECT_TYPE": "Django",
+	"PROJECT_DETAILS": {
+		"DJANGO_PROJECT_NAME": "",
+		"DJANGO_PROJECT_PATH": "",
+		"DJANGO_SETTINGS_MODULE": {
+			"STG": "",
+			"PROD_WEB": ""
+		}
+	},
+	"ADMIN_EMAIL": "",
+	"EC2_INSTANCES": {
+		"STG": [],
+		"PROD_CACHE": [],
+		"PROD_WEB": []
+	},
+	"EC2_KEY_NAME": "",
+	"AWS_ACCESS_KEY": "",
+	"AWS_SECRET_KEY": "",
+	"GIT_USERNAME": "",
+	"GITHUB_USERNAME": "",
+	"GITHUB_REPO_NAME": "",
+	"GITHUB_DEPLOY_KEY_NAME": ""
+}

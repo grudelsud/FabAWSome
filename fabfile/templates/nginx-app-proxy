@@ -6,18 +6,22 @@ upstream app_server {
 server {
   
   # Access Logs
-  access_log %(PROJECT_PATH)s/logs/nginx-access.log;
-  error_log %(PROJECT_PATH)s/logs/nginx-error.log;
+  access_log %(WSGI_PROJECT_BASE_DIR)s/logs/nginx-access.log;
+  error_log %(WSGI_PROJECT_BASE_DIR)s/logs/nginx-error.log;
 
 
   listen 80 default;
   client_max_body_size 4G;
-  # server_name %(DOMAINS)s;
-  server_name _;
+  server_name %(DOMAINS)s;
+  # server_name _;
+
   keepalive_timeout 5;
-  root %(PROJECT_PATH)s;
+  root %(WSGI_PROJECT_BASE_DIR)s;
 
   location / {
+    auth_basic "Restricted";
+    auth_basic_user_file %(PROJECT_ROOT)s/infrastructure/deploy/fabfile/templates/htpasswd;
+
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header Host $http_host;
     proxy_redirect off;
@@ -26,6 +30,12 @@ server {
       break;
     }
   }
+
+  location /static/ {
+    autoindex on;
+    alias %(WSGI_PROJECT_BASE_DIR)s/%(DJANGO_PROJECT_NAME)s/static/;
+  }
+
   error_page 500 502 503 504 /500.html;
   location = /500.html {
     root /path/to/app/current/public;

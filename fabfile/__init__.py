@@ -1,1 +1,1 @@
-from django_fabric_aws import *
+from fabawsome import *
