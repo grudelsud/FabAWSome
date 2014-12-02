@@ -12,10 +12,19 @@
 	},
 	"ADMIN_EMAIL": "",
 	"EC2_INSTANCES": {
-		"STG": [],
-		"PROD_CACHE": [],
-		"PROD_WEB": []
+		"stg": [],
+		"prod_cache": [],
+		"prod_web": []
 	},
+  "EC2_INSTANCE_TYPES": {
+    "test": {
+      "region": "eu-west-1",
+      "amis": ["ami-00b11177"],
+      "keypair": "",
+      "secgroups": ["Webserver"],
+      "instancetype": "t1.micro"
+    }
+  },
 	"EC2_KEY_NAME": "",
 	"AWS_ACCESS_KEY": "",
 	"AWS_SECRET_KEY": "",
