@@ -51,7 +51,7 @@ class Configurator(object):
     self.conf['ACTIVATE'] = "source /home/%s/.virtualenvs/%s/bin/activate" % (self.conf['SERVER_USERNAME'], project_conf['PROJECT_NAME'])
 
     # Name tag for your server instance on EC2
-    self.conf['INSTANCE_NAME_TAG'] = project_conf['GITHUB_REPO_NAME']
+    self.conf['INSTANCE_NAME_TAG'] = project_conf['PROJECT_NAME']
 
   def get_conf(self):
     return self.conf

@@ -2,7 +2,7 @@ import time
 
 import boto.ec2
 from fabric.api import env, run, sudo, put, cd
-from fabric.colors import green as _green, yellow as _yellow
+from fabric.colors import cyan, magenta, yellow, green
 
 
 class MacroInterface(object):
@@ -10,8 +10,11 @@ class MacroInterface(object):
     self.conf = conf
     self.ec2conf = ec2conf
 
+    if not ec2conf:
+      raise BaseException('wrong type for EC2_INSTANCE_TYPES specified when calling this function')
+
   def create_instance(self):
-    print(_yellow("Creating instance"))
+    print(cyan("Creating instance"))
     aws_key = {
       'aws_access_key_id': self.conf['AWS_ACCESS_KEY'],
       'aws_secret_access_key': self.conf['AWS_SECRET_KEY']
@@ -28,12 +31,12 @@ class MacroInterface(object):
     conn.create_tags([instance.id], {"Name": self.conf['INSTANCE_NAME_TAG']})
 
     while instance.state == u'pending':
-      print(_yellow("Instance state: %s. Will check again in 10 seconds" % instance.state))
+      print(yellow("Instance state: %s. Will check again in 10 seconds" % instance.state))
       time.sleep(10)
       instance.update()
 
-    print(_green("Instance state: %s" % instance.state))
-    print(_green("Public dns: %s" % instance.public_dns_name))
+    print(green("Instance state: %s" % instance.state))
+    print(cyan("Public DNS: %s [add this to your EC2_INSTANCES group in conf.json]" % instance.public_dns_name))
 
     return instance.public_dns_name
 
@@ -58,23 +61,23 @@ class CommandInterface(object):
       return
 
     # Print the starting message
-    print(_yellow(start_message))
+    print(cyan(start_message))
 
     # Run the task items
     for item in task:
       try:
-        print(_yellow(item['message']))
+        print(yellow(item['message']))
       except KeyError:
         pass
 
       try:
         f = getattr(self, '_%s' % (item['action'], ))
         f(item['params'])
-      except AttributeError:
-        pass
+      except AttributeError as e:
+        print(magenta('error while executing task: %s' % (e, )))
 
     # Print the final message and the elapsed time
-    print(_yellow("%s in %.2fs" % (finished_message, time.time() - start_time)))
+    print(green("%s in %.2fs" % (finished_message, time.time() - start_time)))
 
   def _run(self, params):
     """
