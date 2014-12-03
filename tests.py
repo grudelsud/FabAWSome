@@ -7,8 +7,9 @@ class TestPlugins(unittest.TestCase):
         pass
 
     def test_plugin_list(self):
-        from fabfile.tasks import plugins
+        from fabfile.tasks import plugins, tasks
         print plugins
+        print tasks
 
 
 if __name__ == '__main__':
