@@ -2,6 +2,28 @@ from .supervisor import Tasks as SupervisorTasks
 
 
 class Tasks(object):
+  mkvirtualenv = SupervisorTasks.stop + [
+    {
+      "action": "sudo",
+      "params": "rm -rf %(VIRTUALENV_DIR)s/%(PROJECT_NAME)s",
+      "message": "Cleaning old virtualenv"
+    },
+
+    # Create virtual env
+    {
+      "action": "run",
+      "params": "mkvirtualenv --clear --no-site-packages %(PROJECT_NAME)s",
+      "message": "creating virtualenv"
+    },
+
+    # install gunicorn in virtual env
+    {
+      "action": "virtualenv",
+      "params": "pip install gunicorn",
+      "message": "installing gunicorn"
+    },
+  ]
+
   update_packages = [
     # Install the requirements from the pip requirements files
     {
@@ -30,21 +52,7 @@ class Tasks(object):
       "message": "setup logs dir",
       "params": "mkdir -p %(WSGI_PROJECT_BASE_DIR)s/logs"
     },
-
-    # Create virtual env
-    {
-      "action": "run",
-      "params": "mkvirtualenv --clear --no-site-packages %(PROJECT_NAME)s",
-      "message": "creating virtualenv"
-    },
-
-    # install gunicorn in virtual env
-    {
-      "action": "virtualenv",
-      "params": "pip install gunicorn",
-      "message": "installing gunicorn"
-    },
-  ] + update_packages + gunicorn_conf
+  ] + mkvirtualenv + update_packages + gunicorn_conf
 
   django_gunicorn_startup_script = [
     # Add gunicorn startup script to project folder

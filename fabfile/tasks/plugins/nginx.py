@@ -4,7 +4,8 @@ class Tasks(object):
   setup = [
     {
       "action": "put",
-      "params": {
+      "params":
+      {
         "file": "%(FAB_CONFIG_PATH)s/templates/nginx.conf",
         "destination": "/home/%(SERVER_USERNAME)s/nginx.conf"
       },

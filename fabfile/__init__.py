@@ -40,6 +40,10 @@ def run_task(project, instances_group, plugin, task_name):
   hosts = conf.get_hosts_group(instances_group)
 
   if tasks.get(plugin, False):
+
+    if plugin == 'django':
+      conf.inject_django_conf(instances_group)
+
     if tasks[plugin].get(task_name, False):
       CommandInterface.execute(conf.get_conf(),
                                hosts,
@@ -107,6 +111,26 @@ def django_setup(project, instances_group):
                            'Deploying webapp',
                            'Update finished')
 
+@task
+def nginx_setup(project, instances_group):
+  """
+  setup supervisor + gunicorn for django, params: project, instances_group
+
+  :param project:
+  :param instances_group:
+  :return:
+  """
+  conf = Configurator(project)
+  # TODO: django conf in actuality is only used to define the /static location
+  # and potentially can be removed using WSGI_PROJECT_BASE_DIR as base path
+  conf.inject_django_conf(instances_group)
+  hosts = conf.get_hosts_group(instances_group)
+
+  CommandInterface.execute(conf.get_conf(),
+                           hosts,
+                           tasks['nginx']['reload'],
+                           'Deploying webapp',
+                           'Update finished')
 @task
 def django_deploy(project, instances_group):
   """
