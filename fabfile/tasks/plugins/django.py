@@ -31,5 +31,5 @@ class Commands(object):
 
   manage = {
     "action": "virtualenv",
-    "command": "python %(DJANGO_PROJECT_PATH)s/manage.py %s"
+    "command": "python %(WSGI_PROJECT_BASE_DIR)s/manage.py %s"
   }

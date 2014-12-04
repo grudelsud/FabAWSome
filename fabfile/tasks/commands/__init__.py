@@ -36,7 +36,7 @@ class MacroInterface(object):
       instance.update()
 
     print(green("Instance state: %s" % instance.state))
-    print(cyan("Public DNS: %s [add this to your EC2_INSTANCES group in conf.json]" % instance.public_dns_name))
+    print(cyan("Public DNS (add this to your EC2_INSTANCES group in conf.json): \n--> %s" % instance.public_dns_name))
 
     return instance.public_dns_name
 
@@ -49,11 +49,13 @@ class CommandInterface(object):
     env.user = conf['SERVER_USERNAME']
     env.key_filename = conf['SSH_PRIVATE_KEY_PATH']
 
-  def execute(self, hosts, task, start_message, finished_message):
+  @classmethod
+  def execute(cls, conf, hosts, task, start_message, finished_message):
     print(cyan(start_message))
     start_time = time.time()
 
-    execute(self._run_task, task, hosts=hosts)
+    command = CommandInterface(conf)
+    execute(command._run_task, task, hosts=hosts)
 
     print(green("%s in %.2fs" % (finished_message, time.time() - start_time)))
 
@@ -62,7 +64,7 @@ class CommandInterface(object):
     # Run the task items
     for item in task:
       try:
-        print(yellow(item['message']))
+        print(green(item['message']))
       except KeyError:
         pass
 

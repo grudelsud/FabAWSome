@@ -10,10 +10,10 @@ class Tasks(object):
     {
       "action": "put_template",
       "params":
-        {
-          "template": "%(FAB_CONFIG_PATH)s/templates/supervisord.conf",
-          "destination": "/home/%(SERVER_USERNAME)s/my.supervisord.conf"
-        }
+      {
+        "template": "%(FAB_CONFIG_PATH)s/templates/supervisord.conf",
+        "destination": "/home/%(SERVER_USERNAME)s/my.supervisord.conf"
+      }
     },
     {
       "action": "run",
@@ -32,7 +32,8 @@ class Tasks(object):
       "params": "supervisord"
     },
     {
-      "action": "put", "params":
+      "action": "put",
+      "params":
       {
         "file": "%(FAB_CONFIG_PATH)s/templates/supervisord-init",
         "destination": "/home/%(SERVER_USERNAME)s/supervisord-init"

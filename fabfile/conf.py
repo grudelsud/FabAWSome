@@ -40,10 +40,6 @@ class Configurator(object):
     # Don't edit. Local path for deployment key you use for github
     self.conf['GITHUB_DEPLOY_KEY_PATH'] = "%s/%s" % (self.conf['SSH_PATH'], project_conf['GITHUB_DEPLOY_KEY_NAME'])
 
-    # Where to find manage.py or equivalent for non django projects
-    if re.search(r'django', project_conf['PROJECT_TYPE'], re.IGNORECASE):
-      self.conf['WSGI_PROJECT_BASE_DIR'] = '%s/%s' % (self.conf['PROJECT_ROOT'], project_conf['PROJECT_DETAILS']['DJANGO_PROJECT_PATH'])
-
     # Creates the ssh location of your GITHUB repo from the above details
     self.conf['GITHUB_REPO'] = "ssh://git@github.com/%s/%s.git" % (project_conf['GITHUB_USERNAME'], project_conf['GITHUB_REPO_NAME'])
 
@@ -52,6 +48,13 @@ class Configurator(object):
 
     # Name tag for your server instance on EC2
     self.conf['INSTANCE_NAME_TAG'] = project_conf['PROJECT_NAME']
+
+  def inject_django_conf(self, environment):
+    if re.search(r'django', self.conf['PROJECT_CONFIGURATION']['TYPE'], re.IGNORECASE):
+      data = dict(self.conf['PROJECT_CONFIGURATION']['DETAILS'])
+      data['WSGI_PROJECT_BASE_DIR'] = '%s/%s' % (self.conf['PROJECT_ROOT'], data['DJANGO_PROJECT_PATH'])
+      data.update(self.conf['PROJECT_CONFIGURATION']['ENVIRONMENT'][environment])
+      self.conf.update(data)
 
   def get_conf(self):
     return self.conf

@@ -44,7 +44,7 @@ class Tasks(object):
     # git setup
     {
       "action": "run",
-      "params": "git config --global user.name '%(GIT_USERNAME)s'",
+      "params": "git config --global user.name '%(GITHUB_USERNAME)s'",
       "message": "Configuring git"
     },
     {
@@ -90,7 +90,8 @@ class Tasks(object):
     # Pull the latest version from the bitbucket repo
     {
       "action": "run",
-      "params": "cd %(PROJECT_ROOT)s && git pull"
+      "params": "cd %(PROJECT_ROOT)s && git pull",
+      "message": "Pull from git"
     },
   ]
 
@@ -136,6 +137,7 @@ class Tasks(object):
     },
     {
       "action": "run",
+      "message": "Installing basic nodejs packages",
       "params": "npm install gulp bower browserify -g"
     },
 
