@@ -24,9 +24,18 @@ def create_instance(project, type):
   print("Instance ready - finished in %.2fs" % (time.time() - start_time))
 
 @task
+def setup_instances(project, hosts_group):
+
+  conf = Configurator(project)
+  hosts = conf.get_hosts_group(hosts_group)
+  instance_setup_task = tasks['instance']['setup']
+  command = CommandInterface(conf.get_conf())
+  command.execute(hosts, instance_setup_task, 'Setup instances', 'Update finished')
+
+@task
 def webapp_deploy(project, hosts_group):
   conf = Configurator(project)
   hosts = conf.get_hosts_group(hosts_group)
   webapp_deploy_task = tasks['django']['reload']
   command = CommandInterface(conf.get_conf())
-  command.run_task(hosts, webapp_deploy_task, 'Deploying webapp', 'Update finished')
+  command.execute(hosts, webapp_deploy_task, 'Deploying webapp', 'Update finished')

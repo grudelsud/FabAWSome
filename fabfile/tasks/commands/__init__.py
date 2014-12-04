@@ -1,7 +1,7 @@
 import time
 
 import boto.ec2
-from fabric.api import env, run, sudo, put, cd
+from fabric.api import env, execute, run, sudo, put, cd
 from fabric.colors import cyan, magenta, yellow, green
 
 
@@ -49,19 +49,15 @@ class CommandInterface(object):
     env.user = conf['SERVER_USERNAME']
     env.key_filename = conf['SSH_PRIVATE_KEY_PATH']
 
-  def run_task(self, hosts, task, start_message, finished_message):
-
-    # Get the hosts and record the start time
-    env.hosts = hosts
+  def execute(self, hosts, task, start_message, finished_message):
+    print(cyan(start_message))
     start_time = time.time()
 
-    # Check if any hosts exist
-    if not env.hosts:
-      print("received request to run tasks, but host list is empty")
-      return
+    execute(self._run_task, task, hosts=hosts)
 
-    # Print the starting message
-    print(cyan(start_message))
+    print(green("%s in %.2fs" % (finished_message, time.time() - start_time)))
+
+  def _run_task(self, task):
 
     # Run the task items
     for item in task:
@@ -76,8 +72,6 @@ class CommandInterface(object):
       except AttributeError as e:
         print(magenta('error while executing task: %s' % (e, )))
 
-    # Print the final message and the elapsed time
-    print(green("%s in %.2fs" % (finished_message, time.time() - start_time)))
 
   def _run(self, params):
     """
