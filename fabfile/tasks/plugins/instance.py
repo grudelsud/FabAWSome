@@ -95,6 +95,29 @@ class Tasks(object):
     },
   ]
 
+  varnish = [
+    {
+      "action": "apt",
+      "params": ['apt-transport-https']
+    },
+    {
+      "action": "run",
+      "params": "curl https://repo.varnish-cache.org/ubuntu/GPG-key.txt | sudo apt-key add -"
+    },
+    {
+      "action": "run",
+      "params": "echo 'deb https://repo.varnish-cache.org/ubuntu/ trusty varnish-4.0' | sudo tee -a /etc/apt/sources.list.d/varnish-cache.list"
+    },
+    {
+      "action": "sudo",
+      "params": "apt-get update"
+    },
+    {
+      "action": "apt",
+      "params": ['varnish']
+    },
+  ]
+
   # This takes a few minutes to complete.
   setup = [
 
