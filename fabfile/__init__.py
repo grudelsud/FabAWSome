@@ -43,6 +43,8 @@ def run_task(project, instances_group, plugin, task_name):
 
     if plugin == 'django':
       conf.inject_django_conf(instances_group)
+    elif plugin == 'varnish':
+      conf.inject_varnish_conf(instances_group)
 
     if tasks[plugin].get(task_name, False):
       CommandInterface.execute(conf.get_conf(),

@@ -56,6 +56,10 @@ class Configurator(object):
       data.update(self.conf['PROJECT_CONFIGURATION']['ENVIRONMENT'][environment])
       self.conf.update(data)
 
+  def inject_varnish_conf(self, environment):
+    data = dict(self.conf['PROJECT_CONFIGURATION']['CACHE'][environment])
+    self.conf.update(data)
+
   def get_conf(self):
     return self.conf
 

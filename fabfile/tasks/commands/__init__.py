@@ -1,3 +1,4 @@
+import os
 import time
 
 import boto.ec2
@@ -122,10 +123,16 @@ class CommandInterface(object):
     """
     Same as _put() but it loads a file and does variable replacement
     """
-    f = open(self._render(params['template']), 'r')
-    template = f.read()
+    tmp = 'template.tmp'
 
-    run(self._write_to(self._render(template), self._render(params['destination'])))
+    with open(self._render(params['template']), 'r') as i:
+      template = i.read()
+
+    with open(tmp, 'w') as o:
+      o.write(self._render(template))
+
+    put(tmp, self._render(params['destination']))
+    os.remove(tmp)
 
   def _write_to(self, string, path):
     """
